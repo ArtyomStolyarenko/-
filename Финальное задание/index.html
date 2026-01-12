@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LiftLog - Трекер силовых тренировок</title>
+    <meta name="description" content="Приложение для отслеживания силовых тренировок с графиками прогресса">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="lib/chartjs/chart.min.css">
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🏋️</text></svg>">
+</head>
+<body data-theme="dark" aria-label="Приложение для отслеживания тренировок LiftLog">
+    <!-- Главный контейнер -->
+    <div id="app">
+        <!-- Шапка с улучшенной доступностью -->
+        <header class="header" role="banner">
+            <div class="container">
+                <div class="logo" role="heading" aria-level="1">
+                    <span class="logo-icon" aria-hidden="true">🏋️</span>
+                    <h1>LiftLog</h1>
+                </div>
+                <nav class="nav" aria-label="Основная навигация">
+                    <button class="nav-btn active" data-page="dashboard" aria-current="page">
+                        <i class="fas fa-chart-line" aria-hidden="true"></i>
+                        <span>Дашборд</span>
+                    </button>
+                    <button class="nav-btn" data-page="workout">
+                        <i class="fas fa-dumbbell" aria-hidden="true"></i>
+                        <span>Тренировка</span>
+                    </button>
+                    <button class="nav-btn" data-page="exercises">
+                        <i class="fas fa-list" aria-hidden="true"></i>
+                        <span>Упражнения</span>
+                    </button>
+                    <button class="nav-btn" data-page="progress">
+                        <i class="fas fa-chart-bar" aria-hidden="true"></i>
+                        <span>Прогресс</span>
+                    </button>
+                </nav>
+                <div class="header-actions">
+                    <button class="btn-icon" id="theme-toggle" title="Сменить тему" aria-label="Переключить светлую/тёмную тему">
+                        <i class="fas fa-moon" aria-hidden="true"></i>
+                    </button>
+                    <button class="btn-icon" id="export-data" title="Экспорт данных" aria-label="Экспортировать данные тренировок">
+                        <i class="fas fa-download" aria-hidden="true"></i>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Основной контент -->
+        <main class="main container" role="main">
+            <!-- Дашборд (главная) -->
+            <section id="dashboard-page" class="page active" aria-labelledby="dashboard-title">
+                <div class="page-header">
+                    <h2 id="dashboard-title">Мой прогресс</h2>
+                    <p class="subtitle">Обзор ваших силовых показателей</p>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card" role="region" aria-labelledby="total-workouts-label">
+                        <div class="stat-icon" aria-hidden="true"><i class="fas fa-chart-bar"></i></div>
+                        <h3 id="total-workouts-label">Всего тренировок</h3>
+                        <p class="stat-value" id="total-workouts">0</p>
+                        <div class="stat-trend" id="workout-trend"></div>
+                    </div>
+                    <div class="stat-card" role="region" aria-labelledby="best-exercise-label">
+                        <div class="stat-icon" aria-hidden="true"><i class="fas fa-trophy"></i></div>
+                        <h3 id="best-exercise-label">Лучшее упражнение</h3>
+                        <p class="stat-value" id="best-exercise">-</p>
+                        <p class="stat-subvalue" id="best-exercise-weight">-</p>
+                    </div>
+                    <div class="stat-card" role="region" aria-labelledby="avg-progress-label">
+                        <div class="stat-icon" aria-hidden="true"><i class="fas fa-chart-line"></i></div>
+                        <h3 id="avg-progress-label">Средний прогресс</h3>
+                        <p class="stat-value" id="avg-progress">0%</p>
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                    <div class="stat-card" role="region" aria-labelledby="total-recommendations-label">
+                        <div class="stat-icon" aria-hidden="true"><i class="fas fa-bullseye"></i></div>
+                        <h3 id="total-recommendations-label">Рекомендации</h3>
+                        <p class="stat-value" id="total-recommendations">0</p>
+                        <p class="stat-subvalue" id="recommendations-text">готовы к увеличению</p>
+                    </div>
+                </div>
+
+                <div class="dashboard-grid">
+                    <div class="section recent-workouts">
+                        <div class="section-header">
+                            <h3>Последние тренировки</h3>
+                            <button class="btn-text" id="view-all-workouts">Все тренировки</button>
+                        </div>
+                        <div id="recent-workouts" class="workouts-list" role="list" aria-label="Список последних тренировок">
+                            <!-- Список тренировок будет здесь -->
+                            <div class="empty-state">
+                                <i class="fas fa-dumbbell" aria-hidden="true"></i>
+                                <p>Тренировок пока нет</p>
+                                <button class="btn btn-primary" data-page="workout">Начать первую тренировку</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section quick-stats">
+                        <div class="section-header">
+                            <h3>Быстрая статистика</h3>
+                        </div>
+                        <div class="quick-stats-grid">
+                            <div class="quick-stat">
+                                <div class="quick-stat-icon" style="background: var(--color-success-light)">
+                                    <i class="fas fa-weight-hanging" style="color: var(--color-success)"></i>
+                                </div>
+                                <div>
+                                    <p class="quick-stat-label">Общий тоннаж</p>
+                                    <p class="quick-stat-value" id="total-tonnage">0 кг</p>
+                                </div>
+                            </div>
+                            <div class="quick-stat">
+                                <div class="quick-stat-icon" style="background: var(--color-warning-light)">
+                                    <i class="fas fa-fire" style="color: var(--color-warning)"></i>
+                                </div>
+                                <div>
+                                    <p class="quick-stat-label">Средний объём</p>
+                                    <p class="quick-stat-value" id="avg-volume">0 кг</p>
+                                </div>
+                            </div>
+                            <div class="quick-stat">
+                                <div class="quick-stat-icon" style="background: var(--color-info-light)">
+                                    <i class="fas fa-calendar" style="color: var(--color-info)"></i>
+                                </div>
+                                <div>
+                                    <p class="quick-stat-label">Тренировок/неделю</p>
+                                    <p class="quick-stat-value" id="workouts-per-week">0</p>
+                                </div>
+                            </div>
+                            <div class="quick-stat">
+                                <div class="quick-stat-icon" style="background: var(--color-primary-light)">
+                                    <i class="fas fa-trend-up" style="color: var(--color-primary)"></i>
+                                </div>
+                                <div>
+                                    <p class="quick-stat-label">Прогресс за месяц</p>
+                                    <p class="quick-stat-value" id="month-progress">+0%</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Страница тренировки -->
+            <section id="workout-page" class="page" aria-labelledby="workout-title" hidden>
+                <div class="page-header">
+                    <h2 id="workout-title">Новая тренировка</h2>
+                    <p class="subtitle">Запишите ваши подходы и повторения</p>
+                </div>
+
+                <div class="workout-form" role="form" aria-labelledby="workout-title">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="workout-date"><i class="fas fa-calendar-alt"></i> Дата тренировки</label>
+                            <input type="date" id="workout-date" class="form-control" value="" required aria-required="true">
+                        </div>
+                        <div class="form-group">
+                            <label for="workout-notes"><i class="fas fa-sticky-note"></i> Заметки</label>
+                            <input type="text" id="workout-notes" class="form-control" placeholder="Самочувствие, особенности..." maxlength="100">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="exercise-select"><i class="fas fa-dumbbell"></i> Упражнение</label>
+                        <div class="select-wrapper">
+                            <select id="exercise-select" class="form-control" required aria-required="true">
+                                <option value="">Выберите упражнение</option>
+                            </select>
+                            <button class="btn-icon" id="add-exercise-btn" title="Добавить упражнение" aria-label="Добавить новое упражнение">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="sets-container">
+                        <div class="sets-header">
+                            <h3><i class="fas fa-list-ol"></i> Подходы</h3>
+                            <div class="sets-summary">
+                                <span>Объём: <strong id="total-volume">0 кг</strong></span>
+                                <span>1ПМ: <strong id="estimated-1rm">0 кг</strong></span>
+                            </div>
+                        </div>
+                        <div id="sets-list" role="list" aria-label="Список подходов">
+                            <!-- Подходы будут добавляться здесь -->
+                            <div class="set-row template" hidden>
+                                <div class="set-number" aria-label="Номер подхода">1</div>
+                                <input type="number" class="form-control set-weight" placeholder="Вес (кг)" min="0" step="0.5" 
+                                       aria-label="Вес для подхода 1" required>
+                                <input type="number" class="form-control set-reps" placeholder="Повторения" min="1" max="50" 
+                                       aria-label="Количество повторений для подхода 1" required>
+                                <button class="btn-icon delete-set" title="Удалить подход" aria-label="Удалить подход 1">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="sets-actions">
+                            <button class="btn btn-secondary" id="add-set-btn">
+                                <i class="fas fa-plus"></i> Добавить подход
+                            </button>
+                            <button class="btn btn-text" id="clear-sets-btn">
+                                <i class="fas fa-broom"></i> Очистить все
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button class="btn btn-primary" id="save-workout-btn">
+                            <i class="fas fa-save"></i> Сохранить тренировку
+                        </button>
+                        <button class="btn btn-secondary" id="cancel-workout-btn" type="button">
+                            <i class="fas fa-times"></i> Отмена
+                        </button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Страница упражнений -->
+            <section id="exercises-page" class="page" aria-labelledby="exercises-title" hidden>
+                <div class="page-header">
+                    <h2 id="exercises-title">Упражнения</h2>
+                    <p class="subtitle">Управление списком упражнений</p>
+                </div>
+
+                <div class="exercises-controls">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="exercise-search" placeholder="Поиск упражнений..." aria-label="Поиск упражнений">
+                    </div>
+                    <button class="btn btn-primary" id="add-exercise-modal-btn">
+                        <i class="fas fa-plus"></i> Добавить упражнение
+                    </button>
+                </div>
+
+                <div class="exercises-list" id="exercises-list" role="list" aria-label="Список упражнений">
+                    <!-- Список упражнений будет здесь -->
+                </div>
+            </section>
+
+            <!-- Страница прогресса -->
+            <section id="progress-page" class="page" aria-labelledby="progress-title" hidden>
+                <div class="page-header">
+                    <h2 id="progress-title">Прогресс</h2>
+                    <p class="subtitle">Графики и рекомендации по прогрессии</p>
+                </div>
+
+                <div class="progress-controls">
+                    <div class="form-group">
+                        <label for="progress-exercise-select"><i class="fas fa-dumbbell"></i> Упражнение</label>
+                        <select id="progress-exercise-select" class="form-control">
+                            <option value="">Выберите упражнение</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="chart-type"><i class="fas fa-chart-line"></i> Тип графика</label>
+                        <select id="chart-type" class="form-control">
+                            <option value="weight">Максимальный вес</option>
+                            <option value="volume">Объём (вес × повторения)</option>
+                            <option value="reps">Количество повторений</option>
+                            <option value="1rm">Расчётный 1ПМ</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="time-period"><i class="fas fa-calendar"></i> Период</label>
+                        <select id="time-period" class="form-control">
+                            <option value="all">Всё время</option>
+                            <option value="month">Месяц</option>
+                            <option value="3months">3 месяца</option>
+                            <option value="6months">6 месяцев</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <div class="chart-header">
+                        <h4 id="chart-title">Прогресс по упражнению</h4>
+                        <div class="chart-actions">
+                            <button class="btn-icon" id="export-chart" title="Экспорт графика" aria-label="Экспортировать график">
+                                <i class="fas fa-download"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <canvas id="progress-chart" aria-label="График прогресса" role="img"></canvas>
+                </div>
+
+                <div class="progress-insights">
+                    <div class="insight-card">
+                        <h4><i class="fas fa-lightbulb"></i> Рекомендации</h4>
+                        <div id="recommendations" class="recommendations">
+                            <!-- Рекомендации будут здесь -->
+                            <p class="empty-state">Выберите упражнение для получения рекомендаций</p>
+                        </div>
+                    </div>
+                    <div class="insight-card">
+                        <h4><i class="fas fa-chart-pie"></i> Статистика упражнения</h4>
+                        <div id="exercise-stats" class="exercise-stats">
+                            <div class="stat-item">
+                                <span>Всего тренировок:</span>
+                                <strong id="stat-total-workouts">0</strong>
+                            </div>
+                            <div class="stat-item">
+                                <span>Максимальный вес:</span>
+                                <strong id="stat-max-weight">0 кг</strong>
+                            </div>
+                            <div class="stat-item">
+                                <span>Средний объём:</span>
+                                <strong id="stat-avg-volume">0 кг</strong>
+                            </div>
+                            <div class="stat-item">
+                                <span>Прогресс за месяц:</span>
+                                <strong id="stat-month-progress" class="positive">+0%</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Модальное окно добавления упражнения -->
+        <div class="modal" id="add-exercise-modal" role="dialog" aria-labelledby="modal-title" aria-hidden="true" hidden>
+            <div class="modal-overlay" tabindex="-1"></div>
+            <div class="modal-content" role="document">
+                <div class="modal-header">
+                    <h3 id="modal-title">Новое упражнение</h3>
+                    <button class="btn-icon close-modal" aria-label="Закрыть модальное окно">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="new-exercise-name"><i class="fas fa-dumbbell"></i> Название упражнения</label>
+                        <input type="text" id="new-exercise-name" class="form-control" 
+                               placeholder="Например: Жим штанги лёжа" required aria-required="true">
+                    </div>
+                    <div class="form-group">
+                        <label for="new-exercise-type"><i class="fas fa-tags"></i> Тип упражнения</label>
+                        <select id="new-exercise-type" class="form-control">
+                            <option value="strength">Силовое</option>
+                            <option value="hypertrophy">На гипертрофию</option>
+                            <option value="accessory">Вспомогательное</option>
+                            <option value="warmup">Разминочное</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="new-exercise-muscle"><i class="fas fa-user"></i> Основная группа мышц</label>
+                        <select id="new-exercise-muscle" class="form-control">
+                            <option value="chest">Грудь</option>
+                            <option value="back">Спина</option>
+                            <option value="legs">Ноги</option>
+                            <option value="shoulders">Плечи</option>
+                            <option value="arms">Руки</option>
+                            <option value="core">Пресс</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary close-modal">
+                        <i class="fas fa-times"></i> Отмена
+                    </button>
+                    <button class="btn btn-primary" id="save-exercise-btn">
+                        <i class="fas fa-save"></i> Сохранить
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Модальное окно редактирования тренировки -->
+        <div class="modal" id="edit-workout-modal" role="dialog" aria-labelledby="edit-modal-title" aria-hidden="true" hidden>
+            <div class="modal-overlay" tabindex="-1"></div>
+            <div class="modal-content" role="document">
+                <div class="modal-header">
+                    <h3 id="edit-modal-title">Редактировать тренировку</h3>
+                    <button class="btn-icon close-modal" aria-label="Закрыть модальное окно">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body" id="edit-workout-content">
+                    <!-- Контент будет добавляться динамически -->
+                </div>
+            </div>
+        </div>
+
+        <!-- Уведомления -->
+        <div class="notifications" id="notifications" role="status" aria-live="polite" aria-atomic="true"></div>
+
+        <!-- Подсказка для клавиатуры -->
+        <div class="keyboard-hint" id="keyboard-hint" aria-hidden="true">
+            <span>Используйте Tab для навигации, Enter для выбора</span>
+        </div>
+    </div>
+
+    <!-- Подключение библиотек -->
+    <script src="lib/chartjs/chart.min.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>

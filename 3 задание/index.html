@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pixel Jumper - Платформер с 3 уровнями</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Pixel Jumper - 3 Уровня</h1>
+        
+        <div class="game-container">
+            <canvas id="gameCanvas" width="800" height="600"></canvas>
+            
+            <div class="ui-overlay">
+                <div class="score-display">
+                    <span>Очки: <span id="score">0</span></span>
+                    <span>Рекорд: <span id="highScore">0</span></span>
+                </div>
+                <div class="level-display">
+                    Уровень: <span id="level">1</span>/3
+                </div>
+                <div class="health-display">
+                    Жизни: <span id="lives">3</span>
+                </div>
+            </div>
+            
+            <div class="level-info" id="levelInfo">
+                <div id="levelName">Уровень 1: Начало</div>
+                <div id="levelTime">Время: 60с</div>
+                <div id="coinsLeft">Монет: 0</div>
+            </div>
+        </div>
+        
+        <div class="controls">
+            <div class="buttons">
+                <button id="startBtn" class="btn start">Старт</button>
+                <button id="pauseBtn" class="btn pause">Пауза</button>
+                <button id="restartBtn" class="btn restart">Рестарт</button>
+                <button id="nextLevelBtn" class="btn next">След. уровень</button>
+            </div>
+            
+            <div class="instructions">
+                <h3>Управление:</h3>
+                <p>← → или A/D - Движение</p>
+                <p>ПРОБЕЛ или W - Прыжок</p>
+                <p>P - Пауза</p>
+                <p>Цель: Соберите все монеты на каждом уровне!</p>
+            </div>
+            
+            <div class="stats">
+                <h3>Особенности игры:</h3>
+                <p>• 3 уникальных уровня</p>
+                <p>• Нельзя упасть с платформ</p>
+                <p>• 60 секунд на уровень</p>
+                <p>• 3 жизни</p>
+                <p>• Создано с помощью DeepSeek</p>
+            </div>
+        </div>
+        
+        <div class="game-message" id="gameMessage"></div>
+    </div>
+    
+    <script src="js/InputHandler.js"></script>
+    <script src="js/Player.js"></script>
+    <script src="js/Platform.js"></script>
+    <script src="js/Coin.js"></script>
+    <script src="js/Game.js"></script>
+    <script src="js/main.js"></script>
+</body>
+</html>
